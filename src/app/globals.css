@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "NanumSquareNeo";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/NanumSquareNeo-Variable.woff2")
+    format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@theme {
+  --color-primary: #f06418;
+  --color-line: #dddddd;
+  --color-soft: #999999;
+  --color-check: #f6ae24;
+  --font-sans: "NanumSquareNeo", "Apple SD Gothic Neo", "Noto Sans KR",
+    sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: #000;
+}
