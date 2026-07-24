@@ -1,6 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { buildKakaoAuthorizeUrl } from "@/lib/kakao";
 
 export default function LoginPage() {
+  const handleKakaoLogin = () => {
+    window.location.href = buildKakaoAuthorizeUrl();
+  };
+
   return (
     <div className="relative min-h-dvh overflow-hidden bg-black">
       {/* 배경 사진 + 어두운 오버레이 */}
@@ -51,10 +58,15 @@ export default function LoginPage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/icons/icon-google.svg" alt="" className="h-14 w-14" />
             </Link>
-            <Link href="/signup" aria-label="카카오 로그인" className="rounded-full shadow-lg">
+            <button
+              type="button"
+              onClick={handleKakaoLogin}
+              aria-label="카카오 로그인"
+              className="rounded-full shadow-lg"
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/icons/icon-kakao.svg" alt="" className="h-14 w-14" />
-            </Link>
+            </button>
           </div>
         </div>
       </div>

@@ -1,27 +1,86 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import TopBarSub from "@/components/TopBarSub";
 import SectionTitle from "@/components/SectionTitle";
 import BottomCTA from "@/components/BottomCTA";
+import ImageWithFallback from "@/components/ImageWithFallback";
 import { MinusIcon, PlusIcon } from "@/components/icons";
-import { TEAMS } from "@/lib/data";
-
-const LEAGUES = ["추천", "프리머어", "라리가", "세이에A", "분데스리가"];
-
-const TEAM_LIST = [
-  TEAMS.arsenal,
-  TEAMS.manutd,
-  TEAMS.barcelona,
-  TEAMS.realmadrid,
-  TEAMS.acmilan,
-  TEAMS.juventus,
-];
+import { getLeagues, getTeams, type LeagueResponse, type TeamResponse } from "@/lib/api/teams";
+import { getMyTeam, setMyTeam as apiSetMyTeam } from "@/lib/api/user";
+import { ApiError } from "@/lib/api/client";
+import { useRequireAuth } from "@/lib/auth/useRequireAuth";
 
 export default function MyTeamPage() {
-  const [league, setLeague] = useState("추천");
-  const [selected, setSelected] = useState<string | null>(TEAMS.barcelona.name);
-  const selectedTeam = TEAM_LIST.find((t) => t.name === selected);
+  const status = useRequireAuth();
+  const router = useRouter();
+
+  const [leagues, setLeagues] = useState<LeagueResponse[]>([]);
+  const [leagueId, setLeagueId] = useState<number | null>(null);
+  const [teams, setTeams] = useState<TeamResponse[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+  const [selectedTeamName, setSelectedTeamName] = useState<string | null>(null);
+  const [selectedTeamLogo, setSelectedTeamLogo] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getLeagues()
+      .then((res) => {
+        setLeagues(res);
+        if (res.length > 0) setLeagueId(res[0].leagueId);
+      })
+      .catch(() => setLeagues([]));
+  }, []);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    getMyTeam()
+      .then((mt) => {
+        if (mt) {
+          setSelectedTeamId(mt.teamId);
+          setSelectedTeamName(mt.teamName);
+          setSelectedTeamLogo(mt.logoUrl);
+        }
+      })
+      .catch(() => {});
+  }, [status]);
+
+  useEffect(() => {
+    if (leagueId == null) return;
+    getTeams(leagueId)
+      .then(setTeams)
+      .catch(() => setTeams([]));
+  }, [leagueId]);
+
+  if (status !== "authenticated") return null;
+
+  const handleSelect = (team: TeamResponse) => {
+    if (selectedTeamId === team.teamId) {
+      setSelectedTeamId(null);
+      setSelectedTeamName(null);
+      setSelectedTeamLogo(null);
+    } else {
+      setSelectedTeamId(team.teamId);
+      setSelectedTeamName(team.name);
+      setSelectedTeamLogo(team.logoUrl);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedTeamId) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await apiSetMyTeam(selectedTeamId);
+      router.replace("/tickets");
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "마이팀 설정 중 문제가 발생했습니다.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="pb-[130px]">
@@ -35,17 +94,14 @@ export default function MyTeamPage() {
 
         {/* 선택된 팀 표시 */}
         <div className="relative mt-2 h-[60px] w-[90px] shrink-0 rounded-md border border-line bg-white">
-          {selectedTeam ? (
+          {selectedTeamName ? (
             <div className="flex h-full flex-col items-center justify-center gap-1 pl-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={selectedTeam.logo}
-                alt={selectedTeam.name}
+              <ImageWithFallback
+                src={selectedTeamLogo}
+                alt={selectedTeamName}
                 className="h-[30px] w-[30px] object-contain"
               />
-              <span className="text-[8px] font-bold leading-[9px]">
-                {selectedTeam.name}
-              </span>
+              <span className="text-[8px] font-bold leading-[9px]">{selectedTeamName}</span>
             </div>
           ) : (
             <div className="flex h-full items-center justify-center pl-2">
@@ -66,18 +122,18 @@ export default function MyTeamPage() {
           리그선택 <span className="text-soft">(필수)</span>
         </p>
         <div className="scrollbar-none flex gap-[10px] overflow-x-auto px-[27px] pb-1 [scrollbar-width:none]">
-          {LEAGUES.map((name) => (
+          {leagues.map((l) => (
             <button
-              key={name}
+              key={l.leagueId}
               type="button"
-              onClick={() => setLeague(name)}
+              onClick={() => setLeagueId(l.leagueId)}
               className={`h-[34px] shrink-0 whitespace-nowrap rounded-full px-6 text-xs font-bold ${
-                league === name
+                leagueId === l.leagueId
                   ? "bg-primary text-white"
                   : "border border-line bg-white text-black"
               }`}
             >
-              {name}
+              {l.name}
             </button>
           ))}
         </div>
@@ -85,18 +141,18 @@ export default function MyTeamPage() {
 
       {/* 팀 목록 */}
       <section className="mt-4 px-[27px]">
-        {TEAM_LIST.map((team) => {
-          const isSelected = selected === team.name;
+        {teams.length === 0 && <p className="py-8 text-center text-xs text-soft">팀 목록이 없습니다.</p>}
+        {teams.map((team) => {
+          const isSelected = selectedTeamId === team.teamId;
           return (
             <button
-              key={team.name}
+              key={team.teamId}
               type="button"
-              onClick={() => setSelected(isSelected ? null : team.name)}
+              onClick={() => handleSelect(team)}
               className="flex w-full items-center gap-5 border-b border-line py-4 text-left last:border-b-0"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={team.logo}
+              <ImageWithFallback
+                src={team.logoUrl}
                 alt={team.name}
                 className={`h-12 w-12 object-contain ${isSelected ? "opacity-30" : ""}`}
               />
@@ -113,7 +169,7 @@ export default function MyTeamPage() {
                     isSelected ? "text-[#EEEEEE]" : "text-soft"
                   }`}
                 >
-                  {team.league}
+                  {team.leagueName ?? ""}
                 </span>
               </span>
               <span
@@ -130,9 +186,14 @@ export default function MyTeamPage() {
             </button>
           );
         })}
+        {error && <p className="mt-4 text-xs font-bold text-primary">{error}</p>}
       </section>
 
-      <BottomCTA label="선택등록" href="/tickets" />
+      <BottomCTA
+        label={submitting ? "등록 중..." : "선택등록"}
+        onClick={handleSubmit}
+        disabled={!selectedTeamId || submitting}
+      />
     </div>
   );
 }

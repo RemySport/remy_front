@@ -1,31 +1,37 @@
 import Link from "next/link";
-import type { Match } from "@/lib/data";
+import type { TicketSummary } from "@/lib/api/tickets";
+import { formatKoreanDate, formatPrice, formatTime } from "@/lib/format";
+import ImageWithFallback from "./ImageWithFallback";
 import { ArrowRightIcon, ClockIcon, PinIcon } from "./icons";
 
-function TeamCol({ name, logo }: { name: string; logo: string }) {
+function TeamCol({ name, logo }: { name: string; logo: string | null }) {
   return (
     <div className="flex w-[88px] flex-col items-center gap-[10px]">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={logo} alt={name} className="h-10 w-10 object-contain" />
+      <ImageWithFallback src={logo} alt={name} className="h-10 w-10 object-contain" />
       <span className="whitespace-nowrap text-[10px] leading-[11px]">{name}</span>
     </div>
   );
 }
 
-export default function MatchCard({ match }: { match: Match }) {
+export default function MatchCard({ ticket }: { ticket: TicketSummary }) {
+  const isOpen = ticket.status === "AVAILABLE";
+  const stadiumLabel = ticket.stadium
+    ? [ticket.stadium.name, ticket.stadium.city].filter(Boolean).join(", ")
+    : "구장 미정";
+
   return (
     <article className="rounded-md border border-line bg-white px-[11px]">
       <div className="flex h-[45px] items-center justify-between">
-        <span className="text-xs font-extrabold">{match.date}</span>
+        <span className="text-xs font-extrabold">{formatKoreanDate(ticket.date)}</span>
         <span className="text-xs">
-          <b className="font-extrabold">{match.league}</b> 리그
+          <b className="font-extrabold">{ticket.leagueName ?? "미분류"}</b> 리그
         </span>
       </div>
 
       <div className="border-t border-dashed border-line" />
 
       <div className="flex items-center justify-between py-[18px]">
-        <TeamCol name={match.home.name} logo={match.home.logo} />
+        <TeamCol name={ticket.home?.name ?? "?"} logo={ticket.home?.logoUrl ?? null} />
         <div className="flex items-center gap-[10px]">
           <span className="text-xs font-bold">홈팀</span>
           <span className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-white text-[10px] font-black text-[#AAAAAA]">
@@ -33,7 +39,7 @@ export default function MatchCard({ match }: { match: Match }) {
           </span>
           <span className="text-xs font-bold">원정팀</span>
         </div>
-        <TeamCol name={match.away.name} logo={match.away.logo} />
+        <TeamCol name={ticket.away?.name ?? "?"} logo={ticket.away?.logoUrl ?? null} />
       </div>
 
       <div className="border-t border-dashed border-line" />
@@ -42,16 +48,16 @@ export default function MatchCard({ match }: { match: Match }) {
         <div className="flex flex-col gap-[10px]">
           <span className="flex items-center gap-[7px] text-[10px] leading-[11px]">
             <PinIcon className="h-[13px] w-[10px] text-black" />
-            {match.stadium}
+            {stadiumLabel}
           </span>
           <span className="flex items-center gap-[7px] text-[10px] leading-[11px]">
             <ClockIcon className="h-[10px] w-[10px] text-black" />
-            {match.time}
+            {formatTime(ticket.date)} · {formatPrice(ticket.price)}
           </span>
         </div>
-        {match.open ? (
+        {isOpen ? (
           <Link
-            href="/reserve"
+            href={`/reserve?ticketId=${ticket.ticketId}`}
             className="flex h-10 w-[210px] items-center justify-center gap-4 rounded-md bg-primary text-xs font-bold text-white"
           >
             티켓 예약하기

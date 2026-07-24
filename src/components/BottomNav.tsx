@@ -5,7 +5,7 @@ const ITEMS = [
   { key: "home", href: "/tickets", label: "홈", Icon: HomeIcon, size: "h-5 w-5" },
   { key: "search", href: "/search", label: "검색", Icon: SearchIcon, size: "h-5 w-5" },
   { key: "ticket", href: "/status", label: "티켓", Icon: TicketNavIcon, size: "h-[25px] w-[25px]" },
-  { key: "grid", href: "/myteam", label: "메뉴", Icon: GridIcon, size: "h-5 w-5" },
+  { key: "grid", href: "/menu", label: "메뉴", Icon: GridIcon, size: "h-5 w-5" },
 ] as const;
 
 export type NavKey = (typeof ITEMS)[number]["key"];

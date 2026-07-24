@@ -1,3 +1,12 @@
 [build]
   command = "npm run build"
   publish = "out"
+
+# 백엔드가 아직 평문 HTTP(13.209.84.103:8080)라서, Netlify(HTTPS)에서 브라우저가 바로 호출하면
+# mixed-content로 차단된다. Netlify 엣지가 서버 사이드로 대신 호출하도록 프록시한다.
+# 프론트의 NEXT_PUBLIC_API_BASE_URL을 이 경로("/api")로 맞춰서 배포해야 한다.
+[[redirects]]
+  from = "/api/*"
+  to = "http://13.209.84.103:8080/:splat"
+  status = 200
+  force = true
