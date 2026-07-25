@@ -86,7 +86,7 @@ export default function MyTeamPage() {
     <div className="pb-[130px]">
       <TopBarSub title="마이팀 설정" icon="back" href="/tickets" />
 
-      <section className="flex items-start justify-between px-4 pt-7">
+      <section className="flex items-start justify-between gap-3 px-4 pt-7">
         <SectionTitle
           label="마이팀 설정"
           title={"내가 응원하는 팀을\n마이팀으로 선택해주세요."}
@@ -95,13 +95,15 @@ export default function MyTeamPage() {
         {/* 선택된 팀 표시 */}
         <div className="relative mt-2 h-[60px] w-[90px] shrink-0 rounded-md border border-line bg-white">
           {selectedTeamName ? (
-            <div className="flex h-full flex-col items-center justify-center gap-1 pl-2">
+            <div className="flex h-full flex-col items-center justify-center gap-1 overflow-hidden pl-2 pr-1">
               <ImageWithFallback
                 src={selectedTeamLogo}
                 alt={selectedTeamName}
-                className="h-[30px] w-[30px] object-contain"
+                className="h-[30px] w-[30px] shrink-0 object-contain"
               />
-              <span className="text-[8px] font-bold leading-[9px]">{selectedTeamName}</span>
+              <span className="line-clamp-2 break-words text-center text-[8px] font-bold leading-[9px]">
+                {selectedTeamName}
+              </span>
             </div>
           ) : (
             <div className="flex h-full items-center justify-center pl-2">
@@ -154,18 +156,18 @@ export default function MyTeamPage() {
               <ImageWithFallback
                 src={team.logoUrl}
                 alt={team.name}
-                className={`h-12 w-12 object-contain ${isSelected ? "opacity-30" : ""}`}
+                className={`h-12 w-12 shrink-0 object-contain ${isSelected ? "opacity-30" : ""}`}
               />
-              <span className="flex-1">
+              <span className="min-w-0 flex-1">
                 <span
-                  className={`block text-xs font-bold leading-[13px] ${
+                  className={`block break-words text-xs font-bold leading-[15px] ${
                     isSelected ? "text-line" : "text-black"
                   }`}
                 >
                   {team.name}
                 </span>
                 <span
-                  className={`mt-[6px] block text-[8px] font-bold leading-[9px] ${
+                  className={`mt-[6px] block break-words text-[8px] font-bold leading-[11px] ${
                     isSelected ? "text-[#EEEEEE]" : "text-soft"
                   }`}
                 >
@@ -173,7 +175,7 @@ export default function MyTeamPage() {
                 </span>
               </span>
               <span
-                className={`flex h-[30px] w-[30px] items-center justify-center rounded-full ${
+                className={`flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full ${
                   isSelected ? "bg-black" : "bg-soft"
                 }`}
               >

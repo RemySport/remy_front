@@ -22,20 +22,20 @@ export default function ReservationCard({
 
   return (
     <article className="rounded-md border border-line bg-white px-[11px] py-[14px]">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-extrabold">{formatKoreanDate(reservation.date)}</span>
-        <span className="rounded-full bg-[#F4F4F4] px-3 py-1 text-[10px] font-bold text-soft">
+      <div className="flex items-center justify-between gap-2">
+        <span className="truncate text-xs font-extrabold">{formatKoreanDate(reservation.date)}</span>
+        <span className="shrink-0 whitespace-nowrap rounded-full bg-[#F4F4F4] px-3 py-1 text-[10px] font-bold text-soft">
           {STATUS_LABEL[reservation.status] ?? reservation.status}
         </span>
       </div>
-      <h3 className="mt-3 text-sm font-extrabold leading-[18px]">{reservation.title}</h3>
-      <div className="mt-3 flex items-center justify-between text-[10px] text-soft">
-        <span className="flex items-center gap-[7px]">
-          <ClockIcon className="h-[10px] w-[10px] text-black" />
+      <h3 className="mt-3 break-words text-sm font-extrabold leading-[18px]">{reservation.title}</h3>
+      <div className="mt-3 flex items-center justify-between gap-2 text-[10px] text-soft">
+        <span className="flex shrink-0 items-center gap-[7px] whitespace-nowrap">
+          <ClockIcon className="h-[10px] w-[10px] shrink-0 text-black" />
           {formatTime(reservation.date)}
         </span>
         {reservation.seatNumbers && reservation.seatNumbers.length > 0 && (
-          <span>좌석 {reservation.seatNumbers.join(", ")}</span>
+          <span className="truncate">좌석 {reservation.seatNumbers.join(", ")}</span>
         )}
       </div>
       {canCancel && onCancel && (

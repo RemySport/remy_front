@@ -6,6 +6,7 @@ import BottomNav from "@/components/BottomNav";
 import SectionTitle from "@/components/SectionTitle";
 import TogglePill from "@/components/TogglePill";
 import ReservationCard from "@/components/ReservationCard";
+import ScrollToTopButton from "@/components/ScrollToTopButton";
 import { cancelReservation, getReservations, type ReservationSummary } from "@/lib/api/reservations";
 import { ApiError } from "@/lib/api/client";
 import { useRequireAuth } from "@/lib/auth/useRequireAuth";
@@ -103,6 +104,7 @@ export default function StatusPage() {
         </div>
       </div>
 
+      <ScrollToTopButton />
       <BottomNav active="ticket" />
     </div>
   );

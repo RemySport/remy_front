@@ -3,7 +3,11 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import TopBarMain from "@/components/TopBarMain";
 import TopBarSub from "@/components/TopBarSub";
+import BottomNav from "@/components/BottomNav";
+import SectionTitle from "@/components/SectionTitle";
+import ScrollToTopButton from "@/components/ScrollToTopButton";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import {
   getGoods,
@@ -32,13 +36,21 @@ function GoodsListView() {
   }, []);
 
   return (
-    <div className="pb-16">
-      <TopBarSub title="굿즈" icon="back" href="/menu" />
-      <div className="grid grid-cols-2 gap-4 px-4 pt-6">
+    <div className="pb-[130px]">
+      <TopBarMain />
+
+      <section className="px-4 pt-7">
+        <SectionTitle label="굿즈" title="우리 팀 굿즈를 만나보세요." />
+      </section>
+
+      <div className="grid grid-cols-2 gap-4 px-4 pt-7">
         {error && <p className="col-span-2 text-center text-xs text-soft">{error}</p>}
         {!error && goods === null && <p className="col-span-2 text-center text-xs text-soft">불러오는 중...</p>}
+        {!error && goods !== null && goods.length === 0 && (
+          <p className="col-span-2 text-center text-xs text-soft">등록된 굿즈가 없습니다.</p>
+        )}
         {(goods ?? []).map((g) => (
-          <Link key={g.goodsId} href={`/goods?goodsId=${g.goodsId}`} className="block">
+          <Link key={g.goodsId} href={`/goods?goodsId=${g.goodsId}`} className="block min-w-0">
             <div className="relative aspect-square overflow-hidden rounded border border-line bg-white">
               <ImageWithFallback src={g.thumbnailUrl} alt={g.name} className="h-full w-full object-cover" />
               {g.isSoldOut && (
@@ -47,11 +59,14 @@ function GoodsListView() {
                 </span>
               )}
             </div>
-            <p className="mt-2 text-xs font-bold">{g.name}</p>
-            <p className="text-xs text-soft">{g.price.toLocaleString("ko-KR")}원</p>
+            <p className="mt-2 line-clamp-2 break-words text-xs font-bold">{g.name}</p>
+            <p className="truncate text-xs text-soft">{g.price.toLocaleString("ko-KR")}원</p>
           </Link>
         ))}
       </div>
+
+      <ScrollToTopButton />
+      <BottomNav active="goods" />
     </div>
   );
 }
@@ -76,15 +91,15 @@ function GoodsDetailView({ goodsId }: { goodsId: string }) {
           <div className="aspect-square overflow-hidden rounded border border-line bg-white">
             <ImageWithFallback src={detail.imageUrls[0]} alt={detail.name} className="h-full w-full object-cover" />
           </div>
-          <h2 className="mt-4 text-base font-extrabold">{detail.name}</h2>
+          <h2 className="mt-4 break-words text-base font-extrabold">{detail.name}</h2>
           <p className="mt-2 text-sm font-bold text-primary">{detail.price.toLocaleString("ko-KR")}원</p>
-          <p className="mt-3 text-xs text-soft">{detail.description}</p>
+          <p className="mt-3 break-words text-xs text-soft">{detail.description}</p>
           {detail.options.map((opt) => (
             <div key={opt.optionId} className="mt-4">
-              <p className="text-xs font-bold">{opt.name}</p>
+              <p className="break-words text-xs font-bold">{opt.name}</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {opt.values.map((v) => (
-                  <span key={v} className="rounded border border-line px-3 py-1 text-xs">
+                  <span key={v} className="max-w-full break-words rounded border border-line px-3 py-1 text-xs">
                     {v}
                   </span>
                 ))}

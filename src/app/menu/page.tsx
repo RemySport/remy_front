@@ -11,7 +11,6 @@ import { useAuth } from "@/lib/auth/AuthContext";
 const LINKS = [
   { href: "/profile", label: "마이페이지", authOnly: true },
   { href: "/myteam", label: "마이팀 설정", authOnly: true },
-  { href: "/goods", label: "굿즈", authOnly: false },
   { href: "/notices", label: "공지사항", authOnly: false },
   { href: "/faq", label: "자주 묻는 질문", authOnly: false },
 ] as const;
@@ -69,7 +68,8 @@ export default function MenuPage() {
         )}
       </nav>
 
-      <BottomNav active="grid" />
+      {/* 우상단 ...으로 들어오는 화면이라 하단 탭에는 대응하는 항목이 없다. */}
+      <BottomNav />
     </div>
   );
 }

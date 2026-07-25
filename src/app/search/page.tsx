@@ -5,6 +5,7 @@ import TopBarMain from "@/components/TopBarMain";
 import BottomNav from "@/components/BottomNav";
 import SectionTitle from "@/components/SectionTitle";
 import MatchCard from "@/components/MatchCard";
+import ScrollToTopButton from "@/components/ScrollToTopButton";
 import { ArrowDownIcon } from "@/components/icons";
 import { getLeagues, getTeams, type LeagueResponse, type TeamResponse } from "@/lib/api/teams";
 import { getTickets, type TicketSummary } from "@/lib/api/tickets";
@@ -114,6 +115,7 @@ export default function SearchPage() {
         </div>
       </div>
 
+      <ScrollToTopButton />
       <BottomNav active="search" />
     </div>
   );
