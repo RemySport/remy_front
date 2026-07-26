@@ -26,7 +26,7 @@ export default function MyTeamPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getLeagues()
+    getLeagues({ featured: true })
       .then((res) => {
         setLeagues(res);
         if (res.length > 0) setLeagueId(res[0].leagueId);

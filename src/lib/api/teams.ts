@@ -15,8 +15,8 @@ export type TeamResponse = {
   logoUrl: string | null;
 };
 
-export function getLeagues(): Promise<LeagueResponse[]> {
-  return apiFetch<LeagueResponse[]>("/leagues", { auth: false });
+export function getLeagues(params: { featured?: boolean } = {}): Promise<LeagueResponse[]> {
+  return apiFetch<LeagueResponse[]>(`/leagues${buildQuery(params)}`, { auth: false });
 }
 
 export function getTeams(leagueId?: number): Promise<TeamResponse[]> {
