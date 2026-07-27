@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { buildKakaoAuthorizeUrl } from "@/lib/kakao";
 
 export default function LoginPage() {
@@ -44,31 +43,23 @@ export default function LoginPage() {
           <span className="h-px flex-1 bg-[#555555]" />
         </div>
 
-        <div className="mt-8 flex items-end justify-between px-4">
-          <div>
+        <button
+          type="button"
+          onClick={handleKakaoLogin}
+          aria-label="카카오 로그인"
+          className="mt-8 flex w-full items-center gap-6 rounded-2xl bg-white/10 px-4 py-4 text-left shadow-lg backdrop-blur-sm"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/icon-kakao.svg" alt="" className="h-14 w-14 shrink-0" />
+          <div className="ml-2">
             <p className="text-xs font-bold leading-[13px] text-[#DDDDDD]">
               서비스 접속을 위한
             </p>
             <p className="mt-2 text-xl font-extrabold leading-6 text-white">
-              구글, 카카오 로그인
+              카카오 로그인
             </p>
           </div>
-          <div className="flex items-center gap-5">
-            <Link href="/signup" aria-label="구글 로그인" className="rounded-full shadow-lg">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/icon-google.svg" alt="" className="h-14 w-14" />
-            </Link>
-            <button
-              type="button"
-              onClick={handleKakaoLogin}
-              aria-label="카카오 로그인"
-              className="rounded-full shadow-lg"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/icon-kakao.svg" alt="" className="h-14 w-14" />
-            </button>
-          </div>
-        </div>
+        </button>
       </div>
     </div>
   );
