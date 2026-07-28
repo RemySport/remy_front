@@ -21,9 +21,9 @@ export default function TopBarMain() {
       <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-dashed border-line bg-white px-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/icons/remy-logo.svg"
+          src="/icons/remy-logo.png"
           alt="REMY Performance Soccer"
-          className="h-[27px] w-[76px]"
+          className="h-[27px] w-auto"
         />
         {onMenuPage ? (
           <button
