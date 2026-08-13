@@ -1,8 +1,92 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { buildKakaoAuthorizeUrl } from "@/lib/kakao";
+import { testLogin } from "@/lib/api/auth";
+import { ApiError } from "@/lib/api/client";
+import { useAuth } from "@/lib/auth/AuthContext";
+import { XIcon } from "@/components/icons";
+
+function TestLoginSheet({ onClose }: { onClose: () => void }) {
+  const router = useRouter();
+  const { login } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const canSubmit = email.trim().length > 0 && password.length > 0 && !submitting;
+
+  const handleSubmit = async () => {
+    if (!canSubmit) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const result = await testLogin(email.trim(), password);
+      if (result.accessToken && result.refreshToken) {
+        await login({ accessToken: result.accessToken, refreshToken: result.refreshToken });
+        router.replace("/tickets");
+      } else {
+        setError("로그인에 실패했습니다.");
+      }
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "로그인 처리 중 문제가 발생했습니다.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end bg-black/60">
+      <div className="mx-auto w-full max-w-[402px] rounded-t-2xl bg-white px-6 pb-8 pt-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-extrabold text-black">테스트 계정으로 접속</h2>
+          <button type="button" onClick={onClose} aria-label="닫기">
+            <XIcon className="h-3 w-3 text-black" />
+          </button>
+        </div>
+
+        <div className="mt-6 space-y-3">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="이메일"
+            autoComplete="email"
+            className="h-[50px] w-full rounded border border-line px-4 text-xs text-black outline-none placeholder:text-soft"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="비밀번호"
+            autoComplete="current-password"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSubmit();
+            }}
+            className="h-[50px] w-full rounded border border-line px-4 text-xs text-black outline-none placeholder:text-soft"
+          />
+        </div>
+
+        {error && <p className="mt-3 text-xs font-bold text-primary">{error}</p>}
+
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!canSubmit}
+          className="mt-6 flex h-[50px] w-full items-center justify-center rounded-md bg-primary text-sm font-bold text-white disabled:opacity-50"
+        >
+          {submitting ? "로그인 처리 중..." : "로그인"}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function LoginPage() {
+  const [showTestLogin, setShowTestLogin] = useState(false);
+
   const handleKakaoLogin = () => {
     window.location.href = buildKakaoAuthorizeUrl();
   };
@@ -60,7 +144,17 @@ export default function LoginPage() {
             </p>
           </div>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setShowTestLogin(true)}
+          className="mt-4 w-full text-center text-xs font-bold text-[#DDDDDD] underline"
+        >
+          테스트 계정으로 접속
+        </button>
       </div>
+
+      {showTestLogin && <TestLoginSheet onClose={() => setShowTestLogin(false)} />}
     </div>
   );
 }

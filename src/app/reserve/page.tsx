@@ -133,7 +133,7 @@ function ReservePageInner() {
 
   return (
     <div className="pb-[130px]">
-      <TopBarSub title="티켓 예약하기" icon="back" href="/tickets" />
+      <TopBarSub title={step === "select" ? "티켓 예약하기" : "티켓 확정하기"} icon="back" href="/tickets" />
 
       <section className="flex items-start justify-between px-4 pt-7">
         <div>
@@ -256,19 +256,10 @@ function ReservePageInner() {
         </>
       ) : null}
 
-      {step === "select" && (
-        <>
-          <div className="mx-4 mt-7 border-t border-line" />
-          <section className="px-[27px] pb-8 pt-6">
-            <p className="mb-[10px] text-[8px] font-bold leading-[9px]">준비 및 주의사항</p>
-            <div className="flex min-h-[80px] items-center justify-center rounded border border-line bg-white p-4">
-              <span className="text-center text-[10px] text-soft">
-                {ticket.ageLimit ? `관람 연령: ${ticket.ageLimit}` : "준비 및 주의사항 내용"}
-              </span>
-            </div>
-            {actionError && <p className="mt-4 text-xs font-bold text-primary">{actionError}</p>}
-          </section>
-        </>
+      {step === "select" && actionError && (
+        <section className="px-[27px] pb-8 pt-6">
+          <p className="text-xs font-bold text-primary">{actionError}</p>
+        </section>
       )}
 
       {step === "confirm" && (
@@ -321,7 +312,7 @@ function ReservePageInner() {
         />
       ) : (
         <BottomCTA
-          label={submitting ? "결제 처리 중..." : "결제하기"}
+          label={submitting ? "결제 처리 중..." : "카드 결제하기"}
           onClick={handlePay}
           disabled={submitting || (paymentMethods.length > 0 && !paymentMethodId)}
         />
