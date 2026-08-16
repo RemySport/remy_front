@@ -20,6 +20,14 @@ export function pay(request: {
   return apiFetch<PaymentResponse>("/payments", { method: "POST", body: request });
 }
 
+export function payGoodsOrder(request: {
+  orderId: number;
+  paymentMethodId?: number;
+  amount: number;
+}): Promise<PaymentResponse> {
+  return apiFetch<PaymentResponse>("/payments", { method: "POST", body: request });
+}
+
 export function refund(paymentId: string, reason?: string): Promise<RefundResponse> {
   return apiFetch<RefundResponse>(`/payments/${paymentId}/refund`, {
     method: "POST",
