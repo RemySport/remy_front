@@ -69,9 +69,8 @@ function GoodsListView() {
         ))}
       </div>
 
-      <CartFabButton />
       <ScrollToTopButton />
-      <BottomNav active="goods" />
+      <BottomNav active="goods" showCart />
     </div>
   );
 }
