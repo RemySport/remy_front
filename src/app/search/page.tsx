@@ -37,10 +37,13 @@ export default function SearchPage() {
 
   useEffect(() => {
     const selectedTeam = teams.find((t) => t.teamId === teamId);
-    getTickets(selectedTeam ? { keyword: selectedTeam.name } : {})
+    getTickets({
+      ...(selectedTeam ? { keyword: selectedTeam.name } : {}),
+      ...(leagueId === "" ? {} : { leagueId }),
+    })
       .then((res) => setTickets(res.tickets))
       .catch((e) => setError(e instanceof ApiError ? e.message : "검색 결과를 불러오지 못했습니다."));
-  }, [teamId, teams]);
+  }, [teamId, teams, leagueId]);
 
   return (
     <div className="pb-[130px]">

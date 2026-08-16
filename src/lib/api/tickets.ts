@@ -54,7 +54,9 @@ export type TicketListResponse = {
   tickets: TicketSummary[];
 };
 
-export function getTickets(params: { keyword?: string; page?: number; size?: number } = {}): Promise<TicketListResponse> {
+export function getTickets(
+  params: { keyword?: string; leagueId?: number; page?: number; size?: number } = {}
+): Promise<TicketListResponse> {
   return apiFetch<TicketListResponse>(`/tickets${buildQuery(params)}`, { auth: false });
 }
 
