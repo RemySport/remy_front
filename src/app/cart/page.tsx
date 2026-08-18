@@ -10,7 +10,6 @@ import { MinusIcon, PlusIcon, XIcon } from "@/components/icons";
 import { useCart } from "@/lib/cart/CartContext";
 import { createGoodsOrder } from "@/lib/api/goodsOrders";
 import { payGoodsOrder } from "@/lib/api/payments";
-import { getPaymentMethods, type PaymentMethodResponse } from "@/lib/api/user";
 import { ApiError } from "@/lib/api/client";
 import { useRequireAuth } from "@/lib/auth/useRequireAuth";
 import { formatPrice } from "@/lib/format";
@@ -22,8 +21,6 @@ export default function CartPage() {
 
   const [step, setStep] = useState<"cart" | "confirm">("cart");
   const [orderId, setOrderId] = useState<number | null>(null);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodResponse[]>([]);
-  const [paymentMethodId, setPaymentMethodId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -40,9 +37,6 @@ export default function CartPage() {
         items: items.map((i) => ({ goodsId: i.goodsId, variantId: i.variantId, quantity: i.quantity })),
       });
       setOrderId(order.orderId);
-      const methods = await getPaymentMethods();
-      setPaymentMethods(methods);
-      setPaymentMethodId(methods.find((m) => m.isDefault)?.paymentMethodId ?? methods[0]?.paymentMethodId ?? null);
       setStep("confirm");
     } catch (e) {
       setActionError(e instanceof ApiError ? e.message : "주문 처리 중 문제가 발생했습니다.");
@@ -51,16 +45,13 @@ export default function CartPage() {
     }
   };
 
+  // 카드 결제는 PG사 결제창에서 처리한다 — 카드 정보를 우리 쪽에 등록/보관하지 않는다.
   const handlePay = async () => {
     if (!orderId) return;
     setSubmitting(true);
     setActionError(null);
     try {
-      await payGoodsOrder({
-        orderId,
-        paymentMethodId: paymentMethodId ?? undefined,
-        amount: totalAmount,
-      });
+      await payGoodsOrder({ orderId, amount: totalAmount });
       clear();
       router.replace("/goods/orders");
     } catch (e) {
@@ -161,26 +152,6 @@ export default function CartPage() {
             </div>
           </div>
 
-          <p className="mb-[10px] mt-6 text-[8px] font-bold leading-[9px]">결제 수단</p>
-          {paymentMethods.length === 0 ? (
-            <p className="text-xs text-soft">등록된 결제 수단이 없습니다. 마이페이지에서 결제 수단을 등록해주세요.</p>
-          ) : (
-            <div className="space-y-[10px]">
-              {paymentMethods.map((m) => (
-                <button
-                  key={m.paymentMethodId}
-                  type="button"
-                  onClick={() => setPaymentMethodId(m.paymentMethodId)}
-                  className={`flex h-[50px] w-full items-center justify-between rounded border px-4 text-xs font-bold ${
-                    paymentMethodId === m.paymentMethodId ? "border-primary" : "border-line"
-                  }`}
-                >
-                  <span>{m.cardCompany ?? m.bankName ?? m.type}</span>
-                  <span className="text-soft">{m.cardNumberMasked ?? m.accountNumberMasked}</span>
-                </button>
-              ))}
-            </div>
-          )}
           {actionError && <p className="mt-4 text-xs font-bold text-primary">{actionError}</p>}
         </section>
       )}
@@ -195,7 +166,7 @@ export default function CartPage() {
         <BottomCTA
           label={submitting ? "결제 처리 중..." : "카드 결제하기"}
           onClick={handlePay}
-          disabled={submitting || (paymentMethods.length > 0 && !paymentMethodId)}
+          disabled={submitting}
         />
       )}
     </div>

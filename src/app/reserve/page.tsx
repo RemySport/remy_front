@@ -9,7 +9,6 @@ import { MinusIcon, PlusIcon } from "@/components/icons";
 import { getTicket, type PriceInfo, type TicketDetailResponse } from "@/lib/api/tickets";
 import { createReservation } from "@/lib/api/reservations";
 import { pay } from "@/lib/api/payments";
-import { getPaymentMethods, type PaymentMethodResponse } from "@/lib/api/user";
 import { ApiError } from "@/lib/api/client";
 import { useRequireAuth } from "@/lib/auth/useRequireAuth";
 import { formatKoreanDate, formatPrice, formatTime } from "@/lib/format";
@@ -52,8 +51,6 @@ function ReservePageInner() {
 
   const [step, setStep] = useState<"select" | "confirm">("select");
   const [reservationId, setReservationId] = useState<number | null>(null);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodResponse[]>([]);
-  const [paymentMethodId, setPaymentMethodId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -102,9 +99,6 @@ function ReservePageInner() {
     try {
       const reservation = await createReservation({ ticketId: ticket.ticketId, quantity });
       setReservationId(reservation.reservationId);
-      const methods = await getPaymentMethods();
-      setPaymentMethods(methods);
-      setPaymentMethodId(methods.find((m) => m.isDefault)?.paymentMethodId ?? methods[0]?.paymentMethodId ?? null);
       setStep("confirm");
     } catch (e) {
       setActionError(e instanceof ApiError ? e.message : "예약 처리 중 문제가 발생했습니다.");
@@ -113,16 +107,13 @@ function ReservePageInner() {
     }
   };
 
+  // 카드 결제는 PG사 결제창에서 처리한다 — 카드 정보를 우리 쪽에 등록/보관하지 않는다.
   const handlePay = async () => {
     if (!reservationId) return;
     setSubmitting(true);
     setActionError(null);
     try {
-      await pay({
-        reservationId,
-        paymentMethodId: paymentMethodId ?? undefined,
-        amount: totalAmount,
-      });
+      await pay({ reservationId, amount: totalAmount });
       router.replace("/status");
     } catch (e) {
       setActionError(e instanceof ApiError ? e.message : "결제 처리 중 문제가 발생했습니다.");
@@ -280,26 +271,6 @@ function ReservePageInner() {
             </div>
           </div>
 
-          <p className="mb-[10px] mt-6 text-[8px] font-bold leading-[9px]">결제 수단</p>
-          {paymentMethods.length === 0 ? (
-            <p className="text-xs text-soft">등록된 결제 수단이 없습니다. 마이페이지에서 결제 수단을 등록해주세요.</p>
-          ) : (
-            <div className="space-y-[10px]">
-              {paymentMethods.map((m) => (
-                <button
-                  key={m.paymentMethodId}
-                  type="button"
-                  onClick={() => setPaymentMethodId(m.paymentMethodId)}
-                  className={`flex h-[50px] w-full items-center justify-between rounded border px-4 text-xs font-bold ${
-                    paymentMethodId === m.paymentMethodId ? "border-primary" : "border-line"
-                  }`}
-                >
-                  <span>{m.cardCompany ?? m.bankName ?? m.type}</span>
-                  <span className="text-soft">{m.cardNumberMasked ?? m.accountNumberMasked}</span>
-                </button>
-              ))}
-            </div>
-          )}
           {actionError && <p className="mt-4 text-xs font-bold text-primary">{actionError}</p>}
         </section>
       )}
@@ -314,7 +285,7 @@ function ReservePageInner() {
         <BottomCTA
           label={submitting ? "결제 처리 중..." : "카드 결제하기"}
           onClick={handlePay}
-          disabled={submitting || (paymentMethods.length > 0 && !paymentMethodId)}
+          disabled={submitting}
         />
       )}
     </div>
