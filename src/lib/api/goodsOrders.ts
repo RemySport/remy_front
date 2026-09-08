@@ -6,6 +6,24 @@ export type GoodsOrderItemRequest = {
   quantity: number;
 };
 
+/** 현재는 택배 발송만 지원한다 (Figma "굿즈 확정하기" 배송방법 옵션이 택배 발송 하나뿐). */
+export type ShippingMethod = "PARCEL";
+
+export type ShippingInfoRequest = {
+  recipientName: string;
+  shippingMethod: ShippingMethod;
+  /** 우편번호 (5자리). 카카오(다음) 우편번호 검색 결과의 zonecode. */
+  zonecode: string;
+  /** 검색으로 채워지는 도로명/지번 주소. */
+  address: string;
+  /** 사용자가 직접 입력하는 상세 주소. */
+  addressDetail: string;
+  /** 배송 메시지 (선택). */
+  deliveryMessage?: string;
+};
+
+export type ShippingInfoResponse = ShippingInfoRequest;
+
 export type CreateGoodsOrderResponse = {
   orderId: number;
   status: string;
@@ -26,6 +44,8 @@ export type GoodsOrderSummary = {
   totalAmount: number;
   status: string;
   orderedAt: string | null;
+  /** 예전에 생성된 주문에는 배송지 정보가 없을 수 있어 optional. */
+  shipping?: ShippingInfoResponse | null;
 };
 
 export type GoodsOrderListResponse = {
@@ -38,7 +58,10 @@ export type CancelGoodsOrderResponse = {
   status: string;
 };
 
-export function createGoodsOrder(request: { items: GoodsOrderItemRequest[] }): Promise<CreateGoodsOrderResponse> {
+export function createGoodsOrder(request: {
+  items: GoodsOrderItemRequest[];
+  shipping: ShippingInfoRequest;
+}): Promise<CreateGoodsOrderResponse> {
   return apiFetch<CreateGoodsOrderResponse>("/goods-order", { method: "POST", body: request });
 }
 

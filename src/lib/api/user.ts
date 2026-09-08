@@ -1,10 +1,13 @@
 import { apiFetch } from "./client";
+import type { ShippingInfoResponse } from "./goodsOrders";
 
 export type UserInfoResponse = {
   email: string;
   nickname: string;
   phoneNumber: string | null;
   joinDate: string | null;
+  /** 가장 최근 굿즈 주문에 사용한 배송지 — 한 번도 주문한 적 없으면 null. */
+  defaultShipping: ShippingInfoResponse | null;
 };
 
 export type UpdateMeResponse = {
