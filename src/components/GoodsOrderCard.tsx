@@ -45,6 +45,17 @@ export default function GoodsOrderCard({
         <span className="font-extrabold">{formatPrice(order.totalAmount)}</span>
       </div>
 
+      {order.shipping && (
+        <div className="mt-3 border-t border-line pt-3 text-[10px] text-soft">
+          <p className="truncate">
+            <span className="font-bold text-black">{order.shipping.recipientName}</span> · 택배 발송
+          </p>
+          <p className="mt-1 truncate">
+            ({order.shipping.zonecode}) {order.shipping.address} {order.shipping.addressDetail}
+          </p>
+        </div>
+      )}
+
       {canCancel && onCancel && (
         <button
           type="button"
