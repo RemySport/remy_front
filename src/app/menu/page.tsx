@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 const LINKS = [
   { href: "/profile", label: "마이페이지", authOnly: true },
   { href: "/myteam", label: "마이팀 설정", authOnly: true },
+  { href: "/goods/orders", label: "굿즈 주문내역", authOnly: true },
   { href: "/notices", label: "공지사항", authOnly: false },
   { href: "/faq", label: "자주 묻는 질문", authOnly: false },
 ] as const;

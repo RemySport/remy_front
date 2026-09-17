@@ -20,6 +20,18 @@ export type PaymentStatusResponse = {
   reservationStatus: string | null;
 };
 
+export type PaymentResponse = {
+  paymentId: string;
+  approvedAt: string | null;
+  status: string;
+};
+
+export type RefundResponse = {
+  refundId: string;
+  refundedAmount: number | null;
+  status: string;
+};
+
 export type PaypleAuthResult = {
   PCD_PAY_RST?: string;
   PCD_PAY_CODE?: string;
@@ -46,6 +58,21 @@ export function preparePayment(reservationId: number): Promise<PaymentPrepareRes
   return apiFetch<PaymentPrepareResponse>("/payments/prepare", {
     method: "POST",
     body: { reservationId },
+  });
+}
+
+export function payGoodsOrder(request: {
+  orderId: number;
+  paymentMethodId?: number;
+  amount: number;
+}): Promise<PaymentResponse> {
+  return apiFetch<PaymentResponse>("/payments", { method: "POST", body: request });
+}
+
+export function refund(paymentId: string, reason?: string): Promise<RefundResponse> {
+  return apiFetch<RefundResponse>(`/payments/${paymentId}/refund`, {
+    method: "POST",
+    body: reason ? { reason } : undefined,
   });
 }
 

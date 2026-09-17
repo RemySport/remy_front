@@ -21,6 +21,15 @@ export function kakaoLogin(code: string, redirectUri: string): Promise<LoginResp
   });
 }
 
+/** QA용 이메일/비밀번호 테스트 계정 로그인. 성공 시 소셜 로그인과 동일하게 토큰이 바로 발급된다. */
+export function testLogin(email: string, password: string): Promise<LoginResponse> {
+  return apiFetch<LoginResponse>("/auth/login/test", {
+    method: "POST",
+    body: { email, password },
+    auth: false,
+  });
+}
+
 export function register(
   registerToken: string,
   request: { nickname: string; phoneNumber?: string; agreedTerms: string[] }
