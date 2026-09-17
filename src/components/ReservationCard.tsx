@@ -4,7 +4,11 @@ import { ClockIcon } from "./icons";
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "결제 대기",
-  PAID: "예약 완료",
+  PAYING: "결제 진행 중",
+  PAID: "결제 완료 · 확정 대기",
+  CONFIRMING: "현지 확인 중",
+  CONFIRMED: "예약 확정",
+  SEAT_ASSIGNED: "좌석 배정 완료",
   CANCELLED: "취소됨",
   COMPLETED: "관람 완료",
 };
@@ -18,7 +22,7 @@ export default function ReservationCard({
   onCancel?: (reservationId: number) => void;
   cancelling?: boolean;
 }) {
-  const canCancel = reservation.status === "PENDING" || reservation.status === "PAID";
+  const canCancel = reservation.status === "PENDING";
 
   return (
     <article className="rounded-md border border-line bg-white px-[11px] py-[14px]">
