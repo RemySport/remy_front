@@ -27,6 +27,7 @@ export type TicketSummary = {
 };
 
 export type PriceInfo = {
+  ticketOptionId: number;
   grade: string;
   price: number;
 };

@@ -42,7 +42,7 @@ export type CancelReservationResponse = {
 export function createReservation(request: {
   ticketId: number;
   quantity: number;
-  seatNumbers?: string[];
+  ticketOptionId: number;
 }): Promise<CreateReservationResponse> {
   return apiFetch<CreateReservationResponse>("/reservation", { method: "POST", body: request });
 }

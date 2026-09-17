@@ -8,7 +8,13 @@ import ImageWithFallback from "@/components/ImageWithFallback";
 import { MinusIcon, PlusIcon } from "@/components/icons";
 import { getTicket, type PriceInfo, type TicketDetailResponse } from "@/lib/api/tickets";
 import { createReservation } from "@/lib/api/reservations";
-import { pay } from "@/lib/api/payments";
+import {
+  approvePayment,
+  openPaypleCheckout,
+  preparePayment,
+  type PaymentPrepareResponse,
+  type PaypleAuthResult,
+} from "@/lib/api/payments";
 import { ApiError } from "@/lib/api/client";
 import { useRequireAuth } from "@/lib/auth/useRequireAuth";
 import { formatKoreanDate, formatPrice, formatTime } from "@/lib/format";
@@ -50,7 +56,7 @@ function ReservePageInner() {
   const [selectedGrade, setSelectedGrade] = useState<PriceInfo | null>(null);
 
   const [step, setStep] = useState<"select" | "confirm">("select");
-  const [reservationId, setReservationId] = useState<number | null>(null);
+  const [preparedPayment, setPreparedPayment] = useState<PaymentPrepareResponse | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -93,12 +99,17 @@ function ReservePageInner() {
   const totalAmount = unitPrice * quantity;
 
   const handleReserve = async () => {
-    if (!ticket) return;
+    if (!ticket || !selectedGrade) return;
     setSubmitting(true);
     setActionError(null);
     try {
-      const reservation = await createReservation({ ticketId: ticket.ticketId, quantity });
-      setReservationId(reservation.reservationId);
+      const reservation = await createReservation({
+        ticketId: ticket.ticketId,
+        quantity,
+        ticketOptionId: selectedGrade.ticketOptionId,
+      });
+      const prepared = await preparePayment(reservation.reservationId);
+      setPreparedPayment(prepared);
       setStep("confirm");
     } catch (e) {
       setActionError(e instanceof ApiError ? e.message : "예약 처리 중 문제가 발생했습니다.");
@@ -109,15 +120,40 @@ function ReservePageInner() {
 
   // 카드 결제는 PG사 결제창에서 처리한다 — 카드 정보를 우리 쪽에 등록/보관하지 않는다.
   const handlePay = async () => {
-    if (!reservationId) return;
+    if (!preparedPayment) return;
     setSubmitting(true);
     setActionError(null);
+
+    const handlePaypleResult = async (result: PaypleAuthResult) => {
+      if (result.PCD_PAY_RST !== "success") {
+        setActionError(result.PCD_PAY_MSG || "카드 인증이 완료되지 않았습니다.");
+        setSubmitting(false);
+        return;
+      }
+
+      if (!result.PCD_AUTH_KEY || !result.PCD_PAY_REQKEY) {
+        setActionError("결제 인증 결과가 올바르지 않습니다. 결제 상태를 다시 확인해 주세요.");
+        setSubmitting(false);
+        return;
+      }
+
+      try {
+        await approvePayment({
+          orderId: preparedPayment.orderId,
+          authKey: result.PCD_AUTH_KEY,
+          payReqKey: result.PCD_PAY_REQKEY,
+        });
+      } catch {
+        // 승인 응답을 받지 못했어도 실제 승인은 완료됐을 수 있다. 결과 화면에서 같은 주문을 조회한다.
+      }
+      router.replace(`/payments/result?orderId=${encodeURIComponent(preparedPayment.orderId)}`);
+    };
+
     try {
-      await pay({ reservationId, amount: totalAmount });
-      router.replace("/status");
+      sessionStorage.setItem("remy:lastPaymentOrderId", preparedPayment.orderId);
+      await openPaypleCheckout(preparedPayment, handlePaypleResult);
     } catch (e) {
-      setActionError(e instanceof ApiError ? e.message : "결제 처리 중 문제가 발생했습니다.");
-    } finally {
+      setActionError(e instanceof Error ? e.message : "결제창을 여는 중 문제가 발생했습니다.");
       setSubmitting(false);
     }
   };
@@ -175,7 +211,7 @@ function ReservePageInner() {
               )}
               {ticket.priceInfo.map((grade) => (
                 <button
-                  key={grade.grade}
+                  key={grade.ticketOptionId}
                   type="button"
                   onClick={() => setSelectedGrade(grade)}
                   className={`flex h-[50px] items-center justify-between gap-3 border px-4 text-xs font-extrabold ${
@@ -267,10 +303,14 @@ function ReservePageInner() {
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-soft">결제 금액</span>
-              <span className="font-extrabold">{formatPrice(totalAmount)}</span>
+              <span className="font-extrabold">{formatPrice(preparedPayment?.amount ?? totalAmount)}</span>
             </div>
           </div>
 
+          <div className="mt-6 rounded border border-line bg-[#F8F8F8] p-4 text-[10px] leading-4 text-soft">
+            결제하기를 누르면 페이플 카드·간편결제 창이 열립니다. 카드 정보는 Remy 서버에 저장되지 않습니다.
+            결제가 끝나도 티켓은 현지 확인 후 확정됩니다.
+          </div>
           {actionError && <p className="mt-4 text-xs font-bold text-primary">{actionError}</p>}
         </section>
       )}
@@ -285,7 +325,7 @@ function ReservePageInner() {
         <BottomCTA
           label={submitting ? "결제 처리 중..." : "카드 결제하기"}
           onClick={handlePay}
-          disabled={submitting}
+          disabled={submitting || !preparedPayment}
         />
       )}
     </div>
