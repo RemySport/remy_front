@@ -85,6 +85,7 @@ function TestLoginSheet({ onClose }: { onClose: () => void }) {
 }
 
 export default function LoginPage() {
+  const qaLoginEnabled = process.env.NEXT_PUBLIC_QA_LOGIN_ENABLED === "true";
   const [showTestLogin, setShowTestLogin] = useState(false);
 
   const handleKakaoLogin = () => {
@@ -145,16 +146,20 @@ export default function LoginPage() {
           </div>
         </button>
 
-        <button
-          type="button"
-          onClick={() => setShowTestLogin(true)}
-          className="mt-4 w-full text-center text-xs font-bold text-[#DDDDDD] underline"
-        >
-          테스트 계정으로 접속
-        </button>
+        {qaLoginEnabled && (
+          <button
+            type="button"
+            onClick={() => setShowTestLogin(true)}
+            className="mt-4 w-full text-center text-xs font-bold text-[#DDDDDD] underline"
+          >
+            테스트 계정으로 접속
+          </button>
+        )}
       </div>
 
-      {showTestLogin && <TestLoginSheet onClose={() => setShowTestLogin(false)} />}
+      {qaLoginEnabled && showTestLogin && (
+        <TestLoginSheet onClose={() => setShowTestLogin(false)} />
+      )}
     </div>
   );
 }
