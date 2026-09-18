@@ -43,15 +43,19 @@ export type PaypleAuthResult = {
 
 declare global {
   interface Window {
+    $?: unknown;
+    jQuery?: unknown;
     PaypleCpayAuthCheck?: (request: Record<string, unknown>) => void;
   }
 }
 
+const PAYPLE_JQUERY_URL = "https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js";
 const ALLOWED_PAYPLE_SCRIPTS = new Set([
   "https://democpay.payple.kr/js/v1/payment.js",
   "https://cpay.payple.kr/js/v1/payment.js",
 ]);
 
+let jqueryScriptPromise: Promise<void> | null = null;
 let paypleScriptPromise: Promise<void> | null = null;
 
 export function preparePayment(reservationId: number): Promise<PaymentPrepareResponse> {
@@ -137,27 +141,61 @@ function loadPaypleScript(scriptUrl: string): Promise<void> {
   if (window.PaypleCpayAuthCheck) return Promise.resolve();
   if (paypleScriptPromise) return paypleScriptPromise;
 
-  paypleScriptPromise = new Promise<void>((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>('script[data-remy-payple="true"]');
+  paypleScriptPromise = loadPaypleJQuery().then(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        const existing = document.querySelector<HTMLScriptElement>('script[data-remy-payple="true"]');
+        if (existing) {
+          existing.addEventListener("load", () => resolve(), { once: true });
+          existing.addEventListener(
+            "error",
+            () => reject(new Error("페이플 결제 모듈 로딩에 실패했습니다.")),
+            { once: true }
+          );
+          return;
+        }
+
+        const script = document.createElement("script");
+        script.src = normalized;
+        script.async = true;
+        script.dataset.remyPayple = "true";
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("페이플 결제 모듈 로딩에 실패했습니다."));
+        document.head.appendChild(script);
+      })
+  ).catch((error) => {
+    paypleScriptPromise = null;
+    throw error;
+  });
+
+  return paypleScriptPromise;
+}
+
+function loadPaypleJQuery(): Promise<void> {
+  if (window.jQuery && window.$) return Promise.resolve();
+  if (jqueryScriptPromise) return jqueryScriptPromise;
+
+  jqueryScriptPromise = new Promise<void>((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>('script[data-remy-payple-jquery="true"]');
     if (existing) {
       existing.addEventListener("load", () => resolve(), { once: true });
-      existing.addEventListener("error", () => reject(new Error("페이플 결제 모듈 로딩에 실패했습니다.")), {
+      existing.addEventListener("error", () => reject(new Error("결제 모듈 의존성 로딩에 실패했습니다.")), {
         once: true,
       });
       return;
     }
 
     const script = document.createElement("script");
-    script.src = normalized;
+    script.src = PAYPLE_JQUERY_URL;
     script.async = true;
-    script.dataset.remyPayple = "true";
+    script.dataset.remyPaypleJquery = "true";
     script.onload = () => resolve();
-    script.onerror = () => {
-      paypleScriptPromise = null;
-      reject(new Error("페이플 결제 모듈 로딩에 실패했습니다."));
-    };
+    script.onerror = () => reject(new Error("결제 모듈 의존성 로딩에 실패했습니다."));
     document.head.appendChild(script);
+  }).catch((error) => {
+    jqueryScriptPromise = null;
+    throw error;
   });
 
-  return paypleScriptPromise;
+  return jqueryScriptPromise;
 }
