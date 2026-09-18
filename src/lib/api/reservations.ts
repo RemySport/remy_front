@@ -12,6 +12,7 @@ export type ReservationSummary = {
   title: string;
   date: string | null;
   status: string;
+  paymentStatus: string | null;
   seatNumbers: string[] | null;
 };
 
