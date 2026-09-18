@@ -16,6 +16,7 @@ export default function StatusPage() {
   const [tab, setTab] = useState<0 | 1>(0);
   const [reservations, setReservations] = useState<ReservationSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -31,13 +32,28 @@ export default function StatusPage() {
       .catch((e) => setError(e instanceof ApiError ? e.message : "예약 목록을 불러오지 못했습니다."));
   }, [tab, status]);
 
-  const handleCancel = async (reservationId: number) => {
+  const handleCancel = async (reservationId: number, reservationStatus: string) => {
+    const confirmed = window.confirm(reservationStatus === "PAID"
+      ? "결제된 예약을 취소하고 카드 결제 전액을 환불하시겠습니까?"
+      : "결제 전 예약과 좌석 선점을 취소하시겠습니까?");
+    if (!confirmed) return;
     setCancellingId(reservationId);
+    setError(null);
+    setNotice(null);
     try {
-      await cancelReservation(reservationId);
-      setReservations((prev) => prev?.filter((r) => r.reservationId !== reservationId) ?? null);
+      const result=await cancelReservation(reservationId, reservationStatus === "PAID" ? "개인 일정 변경" : undefined);
+      if (result.status === "CANCELLED") {
+        setReservations((prev) => prev?.filter((r) => r.reservationId !== reservationId) ?? null);
+        setNotice(reservationStatus === "PAID" ? "전액 환불이 완료되었습니다." : "예약이 취소되었습니다.");
+      } else if (result.status === "CANCELLING" || result.status === "CANCEL_IN_DOUBT") {
+        setReservations((prev) => prev?.map((r) => r.reservationId === reservationId
+          ? { ...r, paymentStatus: result.status }
+          : r) ?? null);
+        setNotice("환불 결과를 확인 중입니다. 중복으로 취소하지 마세요.");
+      }
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "예약 취소 중 문제가 발생했습니다.");
+      const detail=e instanceof ApiError ? ` (${e.message})` : "";
+      setError(`취소 요청 결과를 확인할 수 없습니다. 다시 요청하지 말고 예약 상태를 새로 확인해 주세요.${detail}`);
     } finally {
       setCancellingId(null);
     }
@@ -88,6 +104,7 @@ export default function StatusPage() {
 
           <div className="mt-10 space-y-5">
             {error && <p className="text-center text-xs text-soft">{error}</p>}
+            {notice && <p role="status" className="rounded-md bg-[#F4F4F4] px-3 py-3 text-center text-xs text-soft">{notice}</p>}
             {!error && reservations === null && <p className="text-center text-xs text-soft">불러오는 중...</p>}
             {!error && reservations !== null && reservations.length === 0 && (
               <p className="text-center text-xs text-soft">표시할 티켓이 없습니다.</p>
