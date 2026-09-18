@@ -8,6 +8,7 @@ import { ApiError } from "@/lib/api/client";
 import { getPaymentStatus, type PaymentStatusResponse } from "@/lib/api/payments";
 import { useRequireAuth } from "@/lib/auth/useRequireAuth";
 import { formatPrice } from "@/lib/format";
+import { useCart } from "@/lib/cart/CartContext";
 
 const FINAL_STATUSES = new Set(["PAID", "FAILED", "CANCELLED", "PARTIAL_REFUNDED", "EXPIRED"]);
 
@@ -31,6 +32,7 @@ function PaymentResultContent() {
   const [payment, setPayment] = useState<PaymentStatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pollingStopped, setPollingStopped] = useState(false);
+  const { clear } = useCart();
 
   const orderId = useMemo(() => {
     const fromQuery = searchParams.get("orderId");
@@ -54,7 +56,9 @@ function PaymentResultContent() {
         setError(null);
 
         if (FINAL_STATUSES.has(next.status)) {
+          if (next.status === "PAID" && next.targetType === "GOODS_ORDER") clear();
           sessionStorage.removeItem("remy:lastPaymentOrderId");
+          sessionStorage.removeItem("remy:lastPaymentTarget");
           return;
         }
       } catch (e) {
@@ -76,18 +80,21 @@ function PaymentResultContent() {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [authStatus, orderId]);
+  }, [authStatus, clear, orderId]);
 
   if (authStatus !== "authenticated") return null;
 
-  const copy = payment ? STATUS_COPY[payment.status] ?? {
+  const isGoods = payment?.targetType === "GOODS_ORDER";
+  const copy = payment ? (payment.status === "PAID" && isGoods
+    ? { title: "결제가 완료되었습니다", description: "굿즈 주문이 접수되었습니다. 주문 내역에서 배송 상태를 확인해 주세요." }
+    : STATUS_COPY[payment.status]) ?? {
     title: "결제 상태 확인",
     description: "주문 상태를 확인하고 있습니다.",
   } : null;
 
   return (
     <div className="min-h-dvh pb-12">
-      <TopBarSub title="결제 결과" icon="back" href="/status" />
+      <TopBarSub title="결제 결과" icon="back" href={isGoods ? "/goods/orders" : "/status"} />
       <main className="px-7 pt-16 text-center">
         {!orderId && <p className="text-sm font-bold text-primary">확인할 주문번호가 없습니다.</p>}
         {orderId && !payment && !error && <p className="text-sm font-bold">결제 상태를 확인하고 있습니다...</p>}
@@ -122,11 +129,11 @@ function PaymentResultContent() {
         )}
 
         <div className="mt-10 grid grid-cols-2 gap-3">
-          <Link href="/status" className="flex h-11 items-center justify-center rounded border border-black text-xs font-bold">
-            예약 내역
+          <Link href={isGoods ? "/goods/orders" : "/status"} className="flex h-11 items-center justify-center rounded border border-black text-xs font-bold">
+            {isGoods ? "주문 내역" : "예약 내역"}
           </Link>
-          <Link href="/tickets" className="flex h-11 items-center justify-center rounded bg-black text-xs font-bold text-white">
-            티켓 보기
+          <Link href={isGoods ? "/goods" : "/tickets"} className="flex h-11 items-center justify-center rounded bg-black text-xs font-bold text-white">
+            {isGoods ? "굿즈 보기" : "티켓 보기"}
           </Link>
         </div>
       </main>

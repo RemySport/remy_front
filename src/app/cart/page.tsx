@@ -10,7 +10,13 @@ import AddressSearchOverlay from "@/components/AddressSearchOverlay";
 import { MinusIcon, PlusIcon, XIcon } from "@/components/icons";
 import { useCart } from "@/lib/cart/CartContext";
 import { createGoodsOrder, type ShippingInfoRequest } from "@/lib/api/goodsOrders";
-import { payGoodsOrder } from "@/lib/api/payments";
+import {
+  approvePayment,
+  openPaypleCheckout,
+  prepareGoodsPayment,
+  type PaymentPrepareResponse,
+  type PaypleAuthResult,
+} from "@/lib/api/payments";
 import { ApiError } from "@/lib/api/client";
 import { useRequireAuth } from "@/lib/auth/useRequireAuth";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -24,11 +30,12 @@ export default function CartPage() {
   const status = useRequireAuth();
   const { user } = useAuth();
   const router = useRouter();
-  const { items, setQuantity, removeItem, clear, totalAmount } = useCart();
+  const { items, setQuantity, removeItem, totalAmount } = useCart();
 
   const [step, setStep] = useState<"cart" | "confirm">("cart");
   const [submitting, setSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [preparedPayment, setPreparedPayment] = useState<PaymentPrepareResponse | null>(null);
 
   // 배송설정 (Figma "굿즈 확정하기") — 주문 생성 시점에 함께 넘긴다.
   const [recipientName, setRecipientName] = useState("");
@@ -80,24 +87,52 @@ export default function CartPage() {
     setSubmitting(true);
     setActionError(null);
     try {
-      const shipping: ShippingInfoRequest = {
-        recipientName: recipientName.trim(),
-        shippingMethod: "PARCEL",
-        zonecode,
-        address,
-        addressDetail: addressDetail.trim(),
-        deliveryMessage: deliveryMessage.trim() || undefined,
+      let prepared = preparedPayment;
+      if (!prepared) {
+        const shipping: ShippingInfoRequest = {
+          recipientName: recipientName.trim(),
+          shippingMethod: "PARCEL",
+          zonecode,
+          address,
+          addressDetail: addressDetail.trim(),
+          deliveryMessage: deliveryMessage.trim() || undefined,
+        };
+        const order = await createGoodsOrder({
+          items: items.map((i) => ({ goodsId: i.goodsId, variantId: i.variantId, quantity: i.quantity })),
+          shipping,
+        });
+        prepared = await prepareGoodsPayment(order.orderId);
+        setPreparedPayment(prepared);
+      }
+
+      const handlePaypleResult = async (result: PaypleAuthResult) => {
+        if (result.PCD_PAY_RST !== "success") {
+          setActionError(result.PCD_PAY_MSG || "카드 인증이 완료되지 않았습니다.");
+          setSubmitting(false);
+          return;
+        }
+        if (!result.PCD_AUTH_KEY || !result.PCD_PAY_REQKEY) {
+          setActionError("결제 인증 결과가 올바르지 않습니다. 결제 상태를 다시 확인해 주세요.");
+          setSubmitting(false);
+          return;
+        }
+        try {
+          await approvePayment({
+            orderId: prepared.orderId,
+            authKey: result.PCD_AUTH_KEY,
+            payReqKey: result.PCD_PAY_REQKEY,
+          });
+        } catch {
+          // 응답 유실 가능성이 있으므로 같은 주문번호를 결과 화면에서 계속 조회한다.
+        }
+        router.replace(`/payments/result?orderId=${encodeURIComponent(prepared.orderId)}`);
       };
-      const order = await createGoodsOrder({
-        items: items.map((i) => ({ goodsId: i.goodsId, variantId: i.variantId, quantity: i.quantity })),
-        shipping,
-      });
-      await payGoodsOrder({ orderId: order.orderId, amount: order.totalAmount });
-      clear();
-      router.replace("/goods/orders");
+
+      sessionStorage.setItem("remy:lastPaymentOrderId", prepared.orderId);
+      sessionStorage.setItem("remy:lastPaymentTarget", "GOODS_ORDER");
+      await openPaypleCheckout(prepared, handlePaypleResult);
     } catch (e) {
       setActionError(e instanceof ApiError ? e.message : "주문 처리 중 문제가 발생했습니다.");
-    } finally {
       setSubmitting(false);
     }
   };

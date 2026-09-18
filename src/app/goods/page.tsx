@@ -85,7 +85,17 @@ function GoodsDetailView({ goodsId }: { goodsId: string }) {
 
   useEffect(() => {
     getGoods(goodsId)
-      .then(setDetail)
+      .then((next) => {
+        setDetail(next);
+        const automatic: Record<number, number> = {};
+        for (const option of next.options) {
+          const available = option.values.filter((value) =>
+            next.variants.some((variant) => variant.stock > 0 && variant.optionValueIds.includes(value.valueId))
+          );
+          if (available.length === 1) automatic[option.optionId] = available[0].valueId;
+        }
+        setSelected(automatic);
+      })
       .catch((e) => setError(e instanceof ApiError ? e.message : "굿즈 정보를 불러오지 못했습니다."));
   }, [goodsId]);
 

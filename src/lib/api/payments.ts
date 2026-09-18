@@ -18,6 +18,8 @@ export type PaymentStatusResponse = {
   paidAmount: number | null;
   approvedAt: string | null;
   reservationStatus: string | null;
+  targetType: "RESERVATION" | "GOODS_ORDER";
+  targetStatus: string | null;
 };
 
 export type PaymentResponse = {
@@ -65,12 +67,11 @@ export function preparePayment(reservationId: number): Promise<PaymentPrepareRes
   });
 }
 
-export function payGoodsOrder(request: {
-  orderId: number;
-  paymentMethodId?: number;
-  amount: number;
-}): Promise<PaymentResponse> {
-  return apiFetch<PaymentResponse>("/payments", { method: "POST", body: request });
+export function prepareGoodsPayment(goodsOrderId: number): Promise<PaymentPrepareResponse> {
+  return apiFetch<PaymentPrepareResponse>("/payments/goods/prepare", {
+    method: "POST",
+    body: { goodsOrderId },
+  });
 }
 
 export function refund(paymentId: string, reason?: string): Promise<RefundResponse> {
