@@ -34,7 +34,7 @@ export default function StatusPage() {
 
   const handleCancel = async (reservationId: number, reservationStatus: string) => {
     const confirmed = window.confirm(reservationStatus === "PAID"
-      ? "결제된 예약을 취소하고 카드 결제 전액을 환불하시겠습니까?"
+      ? "결제된 예약을 취소하고 결제 금액 전액을 환불하시겠습니까?"
       : "결제 전 예약과 좌석 선점을 취소하시겠습니까?");
     if (!confirmed) return;
     setCancellingId(reservationId);

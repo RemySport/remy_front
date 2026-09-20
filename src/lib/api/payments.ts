@@ -1,7 +1,10 @@
 import { apiFetch } from "./client";
 
+export type PaymentMethod = "CARD" | "TRANSFER";
+
 export type PaymentPrepareResponse = {
   orderId: string;
+  paymentMethod: PaymentMethod;
   amount: number;
   goodsName: string;
   payerName: string;
@@ -15,6 +18,7 @@ export type PaymentPrepareResponse = {
 export type PaymentStatusResponse = {
   orderId: string;
   status: string;
+  paymentMethod: PaymentMethod;
   paidAmount: number | null;
   approvedAt: string | null;
   reservationStatus: string | null;
@@ -60,17 +64,23 @@ const ALLOWED_PAYPLE_SCRIPTS = new Set([
 let jqueryScriptPromise: Promise<void> | null = null;
 let paypleScriptPromise: Promise<void> | null = null;
 
-export function preparePayment(reservationId: number): Promise<PaymentPrepareResponse> {
+export function preparePayment(
+  reservationId: number,
+  paymentMethod: PaymentMethod
+): Promise<PaymentPrepareResponse> {
   return apiFetch<PaymentPrepareResponse>("/payments/prepare", {
     method: "POST",
-    body: { reservationId },
+    body: { reservationId, paymentMethod },
   });
 }
 
-export function prepareGoodsPayment(goodsOrderId: number): Promise<PaymentPrepareResponse> {
+export function prepareGoodsPayment(
+  goodsOrderId: number,
+  paymentMethod: PaymentMethod
+): Promise<PaymentPrepareResponse> {
   return apiFetch<PaymentPrepareResponse>("/payments/goods/prepare", {
     method: "POST",
-    body: { goodsOrderId },
+    body: { goodsOrderId, paymentMethod },
   });
 }
 

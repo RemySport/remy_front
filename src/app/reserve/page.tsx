@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import TopBarSub from "@/components/TopBarSub";
 import BottomCTA from "@/components/BottomCTA";
+import PaymentMethodSelector from "@/components/PaymentMethodSelector";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import { MinusIcon, PlusIcon } from "@/components/icons";
 import { getTicket, type PriceInfo, type TicketDetailResponse } from "@/lib/api/tickets";
@@ -13,6 +14,7 @@ import {
   openPaypleCheckout,
   preparePayment,
   type PaymentPrepareResponse,
+  type PaymentMethod,
   type PaypleAuthResult,
 } from "@/lib/api/payments";
 import { ApiError } from "@/lib/api/client";
@@ -57,6 +59,7 @@ function ReservePageInner() {
 
   const [step, setStep] = useState<"select" | "confirm">("select");
   const [preparedPayment, setPreparedPayment] = useState<PaymentPrepareResponse | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CARD");
   const [submitting, setSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -108,7 +111,7 @@ function ReservePageInner() {
         quantity,
         ticketOptionId: selectedGrade.ticketOptionId,
       });
-      const prepared = await preparePayment(reservation.reservationId);
+      const prepared = await preparePayment(reservation.reservationId, paymentMethod);
       setPreparedPayment(prepared);
       setStep("confirm");
     } catch (e) {
@@ -118,7 +121,7 @@ function ReservePageInner() {
     }
   };
 
-  // 카드 결제는 PG사 결제창에서 처리한다 — 카드 정보를 우리 쪽에 등록/보관하지 않는다.
+  // 결제정보는 Payple 결제창에서 처리한다. Remy에는 카드번호나 원문 계좌번호를 저장하지 않는다.
   const handlePay = async () => {
     if (!preparedPayment) return;
     setSubmitting(true);
@@ -126,7 +129,7 @@ function ReservePageInner() {
 
     const handlePaypleResult = async (result: PaypleAuthResult) => {
       if (result.PCD_PAY_RST !== "success") {
-        setActionError(result.PCD_PAY_MSG || "카드 인증이 완료되지 않았습니다.");
+        setActionError(result.PCD_PAY_MSG || "결제수단 인증이 완료되지 않았습니다.");
         setSubmitting(false);
         return;
       }
@@ -243,6 +246,10 @@ function ReservePageInner() {
                 <PlusIcon className="h-3 w-3 text-black" />
               </button>
             </div>
+
+            <div className="mt-6">
+              <PaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} disabled={submitting} />
+            </div>
           </section>
 
           <div className="mx-4 mt-7 border-t border-line" />
@@ -307,9 +314,14 @@ function ReservePageInner() {
             </div>
           </div>
 
+          <div className="mt-6">
+            <PaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} disabled />
+          </div>
+
           <div className="mt-6 rounded border border-line bg-[#F8F8F8] p-4 text-[10px] leading-4 text-soft">
-            결제하기를 누르면 페이플 카드·간편결제 창이 열립니다. 카드 정보는 Remy 서버에 저장되지 않습니다.
-            결제가 끝나도 티켓은 현지 확인 후 확정됩니다.
+            결제하기를 누르면 선택한 페이플 결제창이 열립니다. 카드번호와 원문 계좌번호는 Remy 서버에
+            저장되지 않습니다. 계좌결제의 현금영수증은 결제창에서 신청할 수 있습니다. 결제가 끝나도
+            티켓은 현지 확인 후 확정됩니다.
           </div>
           {actionError && <p className="mt-4 text-xs font-bold text-primary">{actionError}</p>}
         </section>
@@ -323,7 +335,7 @@ function ReservePageInner() {
         />
       ) : (
         <BottomCTA
-          label={submitting ? "결제 처리 중..." : "카드 결제하기"}
+          label={submitting ? "결제 처리 중..." : paymentMethod === "TRANSFER" ? "계좌로 결제하기" : "카드로 결제하기"}
           onClick={handlePay}
           disabled={submitting || !preparedPayment}
         />
