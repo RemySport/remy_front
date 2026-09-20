@@ -39,6 +39,11 @@ export default function ReservationCard({
         </span>
       </div>
       <h3 className="mt-3 break-words text-sm font-extrabold leading-[18px]">{reservation.title}</h3>
+      {reservation.paymentMethod && (
+        <p className="mt-2 text-[10px] text-soft">
+          결제수단: {reservation.paymentMethod === "TRANSFER" ? "계좌결제" : "카드"}
+        </p>
+      )}
       <div className="mt-3 flex items-center justify-between gap-2 text-[10px] text-soft">
         <span className="flex shrink-0 items-center gap-[7px] whitespace-nowrap">
           <ClockIcon className="h-[10px] w-[10px] shrink-0 text-black" />
@@ -60,7 +65,7 @@ export default function ReservationCard({
       )}
       {refundPending && (
         <p className="mt-4 text-center text-[11px] leading-5 text-soft">
-          카드 취소 결과를 확인하고 있습니다. 중복으로 요청하지 마세요.
+          결제 취소 결과를 확인하고 있습니다. 중복으로 요청하지 마세요.
         </p>
       )}
     </article>

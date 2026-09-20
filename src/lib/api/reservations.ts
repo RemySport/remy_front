@@ -13,6 +13,7 @@ export type ReservationSummary = {
   date: string | null;
   status: string;
   paymentStatus: string | null;
+  paymentMethod: "CARD" | "TRANSFER" | null;
   seatNumbers: string[] | null;
 };
 
