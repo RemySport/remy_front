@@ -64,7 +64,15 @@ function GoodsListView() {
               )}
             </div>
             <p className="mt-2 line-clamp-2 break-words text-xs font-bold">{g.name}</p>
-            <p className="truncate text-xs text-soft">{g.price.toLocaleString("ko-KR")}원</p>
+            {g.discountRate > 0 ? (
+              <p className="truncate text-xs">
+                <span className="font-bold text-primary">{g.discountRate}%</span>{" "}
+                <span className="font-bold">{g.salePrice.toLocaleString("ko-KR")}원</span>{" "}
+                <span className="text-[10px] text-soft line-through">{g.price.toLocaleString("ko-KR")}원</span>
+              </p>
+            ) : (
+              <p className="truncate text-xs text-soft">{g.price.toLocaleString("ko-KR")}원</p>
+            )}
           </Link>
         ))}
       </div>
@@ -141,7 +149,7 @@ function GoodsDetailView({ goodsId }: { goodsId: string }) {
         variantId: selectedVariant.variantId,
         name: detail.name,
         optionLabel,
-        price: detail.price,
+        price: detail.discountRate > 0 ? detail.salePrice : detail.price,
         thumbnailUrl: detail.imageUrls[0] ?? null,
         stock: selectedVariant.stock,
       },
@@ -161,7 +169,17 @@ function GoodsDetailView({ goodsId }: { goodsId: string }) {
             <ImageWithFallback src={detail.imageUrls[0]} alt={detail.name} className="h-full w-full object-cover" />
           </div>
           <h2 className="mt-4 break-words text-base font-extrabold">{detail.name}</h2>
-          <p className="mt-2 text-sm font-bold text-primary">{detail.price.toLocaleString("ko-KR")}원</p>
+          {detail.discountRate > 0 ? (
+            <div className="mt-2">
+              <p className="text-xs text-soft line-through">{detail.price.toLocaleString("ko-KR")}원</p>
+              <p className="text-sm font-bold">
+                <span className="text-primary">{detail.discountRate}%</span>{" "}
+                {detail.salePrice.toLocaleString("ko-KR")}원
+              </p>
+            </div>
+          ) : (
+            <p className="mt-2 text-sm font-bold text-primary">{detail.price.toLocaleString("ko-KR")}원</p>
+          )}
           <p className="mt-3 break-words text-xs text-soft">{detail.description}</p>
 
           {detail.options.map((opt) => (

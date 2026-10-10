@@ -26,7 +26,6 @@ export default function TopBarSub({
 
   return (
     <>
-      <div className="h-[57px]" />
       <header className="relative flex h-16 items-center border-b border-dashed border-line px-4">
         <Link
           href={href}

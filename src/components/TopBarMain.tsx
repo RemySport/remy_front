@@ -17,7 +17,6 @@ export default function TopBarMain() {
 
   return (
     <>
-      <div className="h-[57px]" />
       <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-dashed border-line bg-white px-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
