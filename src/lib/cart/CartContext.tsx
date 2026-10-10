@@ -10,6 +10,7 @@ export type CartItem = {
   name: string;
   /** 예: "사이즈: M / 컬러: 레드" — 담을 때 스냅샷으로 저장해둔다. */
   optionLabel: string;
+  /** 담을 당시의 판매가(할인 적용가) 스냅샷. 실제 결제 금액은 주문 생성 API가 현재 판매가로 다시 계산한다. */
   price: number;
   thumbnailUrl: string | null;
   quantity: number;

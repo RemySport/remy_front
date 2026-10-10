@@ -3,7 +3,12 @@ import { apiFetch, buildQuery } from "./client";
 export type GoodsSummary = {
   goodsId: number;
   name: string;
+  /** 정가 */
   price: number;
+  /** 할인율(%), 할인 없으면 0 */
+  discountRate: number;
+  /** 할인 적용 판매가 — 실제 결제 단가 */
+  salePrice: number;
   thumbnailUrl: string | null;
   isSoldOut: boolean;
 };
@@ -37,6 +42,8 @@ export type GoodsDetailResponse = {
   name: string;
   description: string | null;
   price: number;
+  discountRate: number;
+  salePrice: number;
   imageUrls: string[];
   options: GoodsOption[];
   variants: GoodsVariant[];
