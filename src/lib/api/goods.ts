@@ -1,5 +1,15 @@
 import { apiFetch, buildQuery } from "./client";
 
+/** 상품 분류. 지정되지 않은 축은 null. */
+export type GoodsTaxonomy = {
+  brandId: number | null;
+  brandName: string | null;
+  clubId: number | null;
+  clubName: string | null;
+  categoryId: number | null;
+  categoryName: string | null;
+};
+
 export type GoodsSummary = {
   goodsId: number;
   name: string;
@@ -11,6 +21,7 @@ export type GoodsSummary = {
   salePrice: number;
   thumbnailUrl: string | null;
   isSoldOut: boolean;
+  taxonomy: GoodsTaxonomy | null;
 };
 
 export type GoodsListResponse = {
@@ -47,10 +58,35 @@ export type GoodsDetailResponse = {
   imageUrls: string[];
   options: GoodsOption[];
   variants: GoodsVariant[];
+  taxonomy: GoodsTaxonomy | null;
 };
 
-export function getGoodsList(params: { page?: number; size?: number; sort?: string } = {}): Promise<GoodsListResponse> {
+/** 분류 필터. 백엔드 쿼리 파라미터 이름(brand/club/category)과 같다. */
+export type GoodsFilter = {
+  brand?: number | null;
+  club?: number | null;
+  category?: number | null;
+};
+
+export type BrandFacet = { brandId: number; name: string; count: number };
+export type ClubFacet = { clubId: number; name: string; league: string | null; count: number };
+export type CategoryFacet = { categoryId: number; code: string; name: string; count: number };
+
+/** 축별 판매중 상품 수. 각 축은 자기 축을 뺀 나머지 필터만 적용되고, 0건 항목은 오지 않는다. */
+export type GoodsFacetsResponse = {
+  brands: BrandFacet[];
+  clubs: ClubFacet[];
+  categories: CategoryFacet[];
+};
+
+export function getGoodsList(
+  params: { page?: number; size?: number; sort?: string } & GoodsFilter = {}
+): Promise<GoodsListResponse> {
   return apiFetch<GoodsListResponse>(`/goods${buildQuery(params)}`, { auth: false });
+}
+
+export function getGoodsFacets(filter: GoodsFilter = {}): Promise<GoodsFacetsResponse> {
+  return apiFetch<GoodsFacetsResponse>(`/goods/facets${buildQuery(filter)}`, { auth: false });
 }
 
 export function getGoods(goodsId: number | string): Promise<GoodsDetailResponse> {
