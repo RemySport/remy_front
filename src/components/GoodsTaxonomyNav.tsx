@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import TogglePill from "@/components/TogglePill";
 import { getGoodsFacets, type GoodsFacetsResponse, type GoodsFilter } from "@/lib/api/goods";
 import { ApiError } from "@/lib/api/client";
@@ -96,7 +96,7 @@ export default function GoodsTaxonomyNav({
         return (
           <div key={axis} className="mt-4">
             <p className="text-xs font-bold">{AXIS_LABEL[axis]}</p>
-            <div className="-mx-4 mt-2 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+            <ChipRow>
               {chips === null ? (
                 <span className="py-1 text-xs text-soft">불러오는 중...</span>
               ) : (
@@ -113,10 +113,76 @@ export default function GoodsTaxonomyNav({
                   ))}
                 </>
               )}
-            </div>
+            </ChipRow>
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * 가로 칩 목록. 터치 기기는 기본 스와이프로 스크롤되지만 PC 마우스는 가로 스크롤 수단이 없어서
+ * 세로 휠을 가로 이동으로 바꾸고, 마우스 드래그로도 넘길 수 있게 한다.
+ */
+function ChipRow({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ x: number; scrollLeft: number; moved: boolean } | null>(null);
+  const suppressClick = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // React onWheel 은 passive 라 preventDefault 가 안 먹으므로 직접 등록한다.
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
+      const max = el.scrollWidth - el.clientWidth;
+      if (max <= 0) return;
+      // 끝에 닿았으면 페이지 세로 스크롤로 넘긴다.
+      if ((e.deltaY < 0 && el.scrollLeft <= 0) || (e.deltaY > 0 && el.scrollLeft >= max - 1)) return;
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className="-mx-4 mt-2 flex select-none gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      onPointerDown={(e) => {
+        suppressClick.current = false;
+        if (e.pointerType !== "mouse" || e.button !== 0 || !ref.current) return;
+        drag.current = { x: e.clientX, scrollLeft: ref.current.scrollLeft, moved: false };
+      }}
+      onPointerMove={(e) => {
+        const d = drag.current;
+        if (!d || !ref.current) return;
+        const dx = e.clientX - d.x;
+        if (!d.moved && Math.abs(dx) > 5) {
+          d.moved = true;
+          ref.current.setPointerCapture(e.pointerId);
+        }
+        if (d.moved) ref.current.scrollLeft = d.scrollLeft - dx;
+      }}
+      onPointerUp={() => {
+        // 드래그로 끝난 경우 칩이 눌리지 않도록 이어지는 click 을 한 번 막는다.
+        suppressClick.current = drag.current?.moved ?? false;
+        drag.current = null;
+      }}
+      onPointerCancel={() => {
+        drag.current = null;
+      }}
+      onClickCapture={(e) => {
+        if (suppressClick.current) {
+          suppressClick.current = false;
+          e.stopPropagation();
+          e.preventDefault();
+        }
+      }}
+    >
+      {children}
     </div>
   );
 }
